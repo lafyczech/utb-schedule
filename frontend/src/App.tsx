@@ -1,70 +1,56 @@
 import { useEffect, useState } from "react";
+import FullCalendar from "@fullcalendar/react";
+import timeGridPlugin from "@fullcalendar/timegrid";
 
 type Event = {
   id: number;
-  subject: string;
   title: string;
-  teacher: string;
-  room: string;
   day: string;
   start: string;
   end: string;
-  cancelled: string | null;
+};
+
+const dayMap: Record<string, number> = {
+  "Pondělí": 1,
+  "Úterý": 2,
+  "Středa": 3,
+  "Čtvrtek": 4,
+  "Pátek": 5,
 };
 
 function App() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/events")
       .then((res) => res.json())
-      .then((data) => setEvents(data))
-      .catch((err) => console.error(err));
+      .then((data) => {
+        const calendarEvents = data.map((item: Event) => ({
+          id: item.id,
+          title: item.title,
+          daysOfWeek: [dayMap[item.day]],
+          startTime: item.start,
+          endTime: item.end,
+        }));
+
+        setEvents(calendarEvents);
+      });
   }, []);
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>UTB Scheduler</h1>
 
-      {events.map((event) => (
-        <div
-          key={event.id}
-          style={{
-            border: "1px solid gray",
-            padding: "10px",
-            marginBottom: "10px",
-            borderRadius: "8px",
-          }}
-        >
-          <h3>{event.title}</h3>
-
-          <p>
-            <strong>Předmět:</strong> {event.subject}
-          </p>
-
-          <p>
-            <strong>Den:</strong> {event.day}
-          </p>
-
-          <p>
-            <strong>Čas:</strong> {event.start} - {event.end}
-          </p>
-
-          <p>
-            <strong>Místnost:</strong> {event.room}
-          </p>
-
-          <p>
-            <strong>Vyučující:</strong> {event.teacher}
-          </p>
-
-          {event.cancelled && (
-            <p style={{ color: "red" }}>
-              ⚠️ {event.cancelled}
-            </p>
-          )}
-        </div>
-      ))}
+      <FullCalendar
+        plugins={[timeGridPlugin]}
+        initialView="timeGridWeek"
+        weekends={false}
+        allDaySlot={false}
+        events={events}
+        slotMinTime="07:00:00"
+        slotMaxTime="20:00:00"
+        height="auto"
+      />
     </div>
   );
 }
